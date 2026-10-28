@@ -1,0 +1,54 @@
+name: Deploy Laravel to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Laravel Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          timeout: 30s
+          command_timeout: 15m
+
+          script: |
+            set -e
+
+            echo "Starting Laravel deployment..."
+
+            cd /var/www/Laravel-sabzicart-admin
+
+            echo "Pulling latest code..."
+            git pull --ff-only origin main
+
+            echo "Installing PHP dependencies..."
+            composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+            if [ -f package-lock.json ]; then
+              echo "Installing frontend dependencies..."
+              npm ci
+              npm run build
+            fi
+
+            echo "Clearing Laravel caches..."
+            php artisan optimize:clear
+
+            echo "Rebuilding Laravel configuration cache..."
+            php artisan config:cache
+
+            echo "Rebuilding Laravel view cache..."
+            php artisan view:cache
+
+            echo "Deployment completed successfully!"
