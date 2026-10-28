@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TodoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -16,3 +17,12 @@ Route::get('/health', function () {
         'users_in_database' => \App\Models\User::count(),
     ];
 });
+
+Route::get('/todos', [TodoController::class, 'index'])
+    ->name('todos.index');
+
+Route::post('/todos', [TodoController::class, 'store'])
+    ->name('todos.store');
+
+Route::patch('/todos/{todo}/toggle', [TodoController::class, 'toggle'])
+    ->name('todos.toggle');
